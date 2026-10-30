@@ -4,6 +4,7 @@
  */
 import { constants, publicEncrypt } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { isAbsolute, resolve } from 'node:path';
 import type { Config } from '../config.js';
 import { gstinCheckChar, panOf } from '../lib/gstin.js';
 
@@ -63,7 +64,9 @@ export class CashfreeGst implements GstLookup {
   private publicKey: string | null;
   constructor(private cfg: Pick<Config, 'CASHFREE_ENV' | 'CASHFREE_CLIENT_ID' | 'CASHFREE_CLIENT_SECRET' | 'CASHFREE_PUBLIC_KEY_PATH'>) {
     this.base = cfg.CASHFREE_ENV === 'production' ? 'https://api.cashfree.com' : 'https://sandbox.cashfree.com';
-    this.publicKey = cfg.CASHFREE_PUBLIC_KEY_PATH ? readFileSync(cfg.CASHFREE_PUBLIC_KEY_PATH, 'utf8') : null;
+    const keyPath = cfg.CASHFREE_PUBLIC_KEY_PATH;
+    // Relative paths are from the repo root (where .env lives), e.g. secrets/cashfree_public_key.pem
+    this.publicKey = keyPath ? toPem(readFileSync(isAbsolute(keyPath) ? keyPath : resolve(import.meta.dirname, '../../../..', keyPath), 'utf8')) : null;
   }
 
   /**
@@ -90,7 +93,9 @@ export class CashfreeGst implements GstLookup {
       signal: AbortSignal.timeout(15_000),
     });
     const body = (await res.json().catch(() => ({}))) as Record<string, any>;
-    if (res.status === 400 || res.status === 404 || body.valid === false) {
+    // "GSTIN Doesn't Exist" comes back as 200 without `valid` or a legal name, so require one of them.
+    const exists = res.ok && (body.valid === true || typeof body.legal_name_of_business === 'string');
+    if (res.status === 400 || res.status === 404 || (res.ok && !exists)) {
       return { gstin, found: false, legalName: null, tradeName: null, status: null, registeredOn: null, constitution: null, address: null, state: null, provider: this.name };
     }
     if (!res.ok) throw new Error(`GST lookup failed (${res.status}): ${body.message ?? 'unknown error'}`);
@@ -107,6 +112,13 @@ export class CashfreeGst implements GstLookup {
       provider: `${this.name}:${this.cfg.CASHFREE_ENV}`,
     };
   }
+}
+
+/** Cashfree's download is bare base64 (no BEGIN/END lines); wrap it as a PEM public key. */
+function toPem(key: string): string {
+  if (key.includes('BEGIN')) return key;
+  const body = key.replace(/\s+/g, '').match(/.{1,64}/g)!.join('\n');
+  return `-----BEGIN PUBLIC KEY-----\n${body}\n-----END PUBLIC KEY-----\n`;
 }
 
 /** Providers send dates as YYYY-MM-DD or DD/MM/YYYY. */
