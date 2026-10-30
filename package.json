@@ -2,12 +2,21 @@
   "name": "ordershed",
   "private": true,
   "version": "0.1.0",
-  "workspaces": ["apps/*"],
+  "workspaces": [
+    "apps/*",
+    "services/*"
+  ],
   "scripts": {
     "dev": "npm run dev -w apps/web",
     "build": "npm run build -w apps/web",
     "test": "npm run test -w apps/web",
     "typecheck": "npm run typecheck -w apps/web",
-    "screenshots": "npm run screenshots -w apps/web"
+    "screenshots": "npm run screenshots -w apps/web",
+    "db:up": "docker compose up -d db",
+    "migrate": "npm run migrate -w services/api",
+    "seed": "npm run seed -w services/api",
+    "dev:api": "npm run dev -w services/api",
+    "test:api": "npm run test -w services/api",
+    "typecheck:api": "npm run typecheck -w services/api"
   }
 }

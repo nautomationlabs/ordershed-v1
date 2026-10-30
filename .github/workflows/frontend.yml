@@ -32,7 +32,8 @@ jobs:
         with: { name: web-dist, path: apps/web/dist, retention-days: 7 }
 
   deploy:
-    if: github.event_name != 'pull_request'
+    # Skipped until the founder sets the WEB_BUCKET repo variable (deploys need founder approval).
+    if: github.event_name != 'pull_request' && vars.WEB_BUCKET != ''
     needs: check
     runs-on: ubuntu-latest
     environment: sandbox # add required reviewers on staging / prod environments

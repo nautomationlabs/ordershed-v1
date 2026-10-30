@@ -1,0 +1,23 @@
+# Local development database. PostgreSQL 16 with pgvector (used from M3 for similar-part search).
+# The owner role runs migrations; the API connects as the restricted `ordershed_app` role
+# (created by the migration runner) so row-level security is always enforced.
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ordershed-db
+    environment:
+      POSTGRES_USER: ordershed_owner
+      POSTGRES_PASSWORD: ${DB_OWNER_PASSWORD:-owner_dev_only}
+      POSTGRES_DB: ordershed
+    ports:
+      - "5433:5432"
+    volumes:
+      - ordershed-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ordershed_owner -d ordershed"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  ordershed-db:
