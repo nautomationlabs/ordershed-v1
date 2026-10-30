@@ -9,6 +9,8 @@ export const BRAND = {
 export const ENV = {
   label: import.meta.env.VITE_ENV_LABEL ?? 'SANDBOX',
   version: import.meta.env.VITE_APP_VERSION ?? '0.1.0',
-  apiMode: import.meta.env.VITE_API_MODE ?? 'mock',
-  apiBase: import.meta.env.VITE_API_BASE_URL ?? '',
+  apiMode: (import.meta.env.VITE_API_MODE ?? 'mock') as 'mock' | 'http' | 'hybrid',
+  apiBase: import.meta.env.VITE_API_BASE_URL ?? '/v1',
+  /** hybrid mode: features served by the backend, e.g. "join,verification,audit,auth". */
+  live: ((import.meta.env.VITE_API_LIVE as string | undefined) ?? '').split(',').map((s) => s.trim()).filter(Boolean),
 } as const;

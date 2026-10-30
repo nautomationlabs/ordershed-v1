@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApi } from '@/api/client';
+import { useApi, isLive } from '@/api/client';
 import type { AuditEvent, DoaRule } from '@/api/types';
 import { DataTable } from '@/components/DataTable';
 import { Icon } from '@/components/Icon';
@@ -8,6 +8,8 @@ import { dateTime, shortHash } from '@/lib/format';
 
 export function Audit() {
   const { data, isLoading, error, refetch } = useApi('audit');
+  const verify = useApi('auditVerify');
+  const live = isLive('audit');
   return (
     <div className="page">
       <PageHeader
@@ -15,10 +17,20 @@ export function Audit() {
         question="Who did what, when, and can we prove nothing was changed after?"
         meta="Every approval, send, admin action and document is hash-chained and written to S3 Object Lock (compliance mode, 72 months)."
         primary={<button className="btn btn-primary">Export audit bundle</button>}
-        secondary={<button className="link">Verify chain</button>}
+        secondary={<button className="link" onClick={() => verify.refetch()}>Verify chain</button>}
       />
       <div className="mb-12">
-        <Banner tone="good" icon="shield">Chain verified · events 48202 → 48213 · last anchor <span className="mono">sha256:{shortHash(data?.[0]?.hash ?? '0000000000000000', 12)}</span> written to S3 Object Lock at <span className="mono">21-10-2026 08:45</span> IST.</Banner>
+        {!live ? (
+          <Banner tone="good" icon="shield">Chain verified · events 48202 → 48213 · last anchor <span className="mono">sha256:{shortHash(data?.[0]?.hash ?? '0000000000000000', 12)}</span> written to S3 Object Lock at <span className="mono">21-10-2026 08:45</span> IST.</Banner>
+        ) : verify.isLoading || verify.isFetching ? (
+          <Banner tone="info" icon="shield">Verifying the hash chain…</Banner>
+        ) : verify.data?.ok ? (
+          <Banner tone="good" icon="shield">Chain verified · {verify.data.checked} events recomputed from the first · head <span className="mono">sha256:{shortHash(verify.data.head ?? '', 12)}</span></Banner>
+        ) : verify.data ? (
+          <Banner tone="crit" icon="shield">Chain broken at event <span className="mono">{verify.data.firstBadSeq}</span>. Records from that point cannot be trusted; escalate to the founder.</Banner>
+        ) : (
+          <Banner tone="warn" icon="shield">Could not verify the chain right now. {verify.error?.message}</Banner>
+        )}
       </div>
       <DataTable<AuditEvent>
         id="audit"

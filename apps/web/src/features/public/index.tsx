@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { actions, ApiError, isLive } from '@/api/client';
 import { CheckRow } from '@/components/domain';
 import { Icon } from '@/components/Icon';
 import { Banner, Seg, SourceTag } from '@/components/primitives';
@@ -46,6 +47,57 @@ export function ScreenIndex() {
 export function Login() {
   const [role, setRole] = useState<'buyer' | 'supplier' | 'admin'>('buyer');
   const nav = useNavigate();
+  const live = isLive('auth');
+  const [dest, setDest] = useState('');
+  const [challenge, setChallenge] = useState<{ id: string; sentTo: string } | null>(null);
+  const [code, setCode] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const HOME = { buyer: '/b/home', supplier: '/s/open', platform: '/a/ops' } as const;
+
+  function switchRole(r: typeof role) {
+    setRole(r);
+    setDest('');
+    setChallenge(null);
+    setCode('');
+    setErr(null);
+  }
+
+  async function run(fn: () => Promise<void>) {
+    setBusy(true);
+    setErr(null);
+    try {
+      await fn();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : 'Something went wrong. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+  const sendCode = (fallback: string) => {
+    if (!live) return nav(fallback);
+    return run(async () => {
+      const r = await actions.signInCode(role, dest);
+      setChallenge({ id: r.challengeId, sentTo: r.sentTo });
+    });
+  };
+  const verify = () => run(async () => {
+    const me = await actions.signInVerify(challenge!.id, code);
+    nav(HOME[me.org.kind]);
+  });
+
+  const codeStep = live && challenge && (
+    <>
+      <label className="field">
+        <span className="label">Code</span>
+        <input className="input input-lg mono" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" style={{ letterSpacing: '0.3em' }} autoFocus />
+        <span className="hint">If {challenge.sentTo} is registered, a code is on its way. Valid for 10 minutes.</span>
+      </label>
+      <button className="btn btn-primary btn-lg" onClick={verify} disabled={busy || code.length !== 6}>{busy ? 'Checking…' : 'Sign in'}</button>
+      <button className="link small" onClick={() => setChallenge(null)}>Use a different {role === 'supplier' ? 'number' : 'email'}</button>
+    </>
+  );
+
   return (
     <div className="auth">
       <div className="auth-left">
@@ -61,27 +113,38 @@ export function Login() {
       </div>
       <div className="auth-right">
         <h2 style={{ fontSize: 22 }}>Sign in</h2>
-        <Seg options={[{ id: 'buyer', label: 'Buyer' }, { id: 'supplier', label: 'Supplier' }, { id: 'admin', label: 'Admin' }]} value={role} onChange={setRole} />
-        {role === 'buyer' && (
+        <Seg options={[{ id: 'buyer', label: 'Buyer' }, { id: 'supplier', label: 'Supplier' }, { id: 'admin', label: 'Admin' }]} value={role} onChange={switchRole} />
+        {err && <Banner tone="crit">{err}</Banner>}
+        {codeStep}
+        {!codeStep && role === 'buyer' && (
           <>
-            <label className="field"><span className="label">Work email</span><input className="input input-lg" defaultValue="rohan.d@kestrel-motion.example" /></label>
-            <button className="btn btn-primary btn-lg" onClick={() => nav('/b/home')}>Send one-time code</button>
-            <button className="btn btn-lg">Continue with Microsoft (SSO)</button>
+            <label className="field"><span className="label">Work email</span><input className="input input-lg" value={live ? dest : undefined} defaultValue={live ? undefined : 'rohan.d@kestrel-motion.example'} onChange={(e) => setDest(e.target.value)} type="email" autoComplete="email" /></label>
+            <button className="btn btn-primary btn-lg" onClick={() => sendCode('/b/home')} disabled={busy}>Send one-time code</button>
+            <button className="btn btn-lg" disabled={live} title={live ? 'Microsoft sign-in comes with Cognito SSO' : undefined}>Continue with Microsoft (SSO)</button>
             <div className="small muted">New buyer? <Link to="/signup">Create an organisation</Link> · or <Link to="/get-a-quote">get a quote without an account</Link></div>
           </>
         )}
-        {role === 'supplier' && (
+        {!codeStep && role === 'supplier' && (
           <>
-            <label className="field"><span className="label">WhatsApp number</span><div className="input-affix"><span className="affix">+91</span><input className="input input-lg mono" defaultValue="98430 21877" /></div></label>
-            <button className="btn btn-primary btn-lg" onClick={() => nav('/s/open')}>Send code on WhatsApp</button>
+            <label className="field"><span className="label">WhatsApp number</span><div className="input-affix"><span className="affix">+91</span><input className="input input-lg mono" value={live ? dest : undefined} defaultValue={live ? undefined : '98430 21877'} onChange={(e) => setDest(e.target.value)} inputMode="tel" /></div></label>
+            <button className="btn btn-primary btn-lg" onClick={() => sendCode('/s/open')} disabled={busy}>Send code on WhatsApp</button>
             <div className="small muted">Your GSTIN is your organisation key. New? <Link to="/s/join">Join free</Link> or send JOIN to <span className="mono">{BRAND.whatsappNumber}</span>.</div>
           </>
         )}
-        {role === 'admin' && (
+        {!codeStep && role === 'admin' && (
           <>
-            <label className="field"><span className="label">Email</span><input className="input input-lg" defaultValue="divya@ordershed.example" /></label>
-            <button className="btn btn-primary btn-lg" onClick={() => nav('/a/ops')}><Icon name="key" /> Sign in with passkey</button>
-            <div className="small muted">Admin access is passkey-only and every action is logged.</div>
+            <label className="field"><span className="label">Email</span><input className="input input-lg" value={live ? dest : undefined} defaultValue={live ? undefined : 'divya@ordershed.example'} onChange={(e) => setDest(e.target.value)} type="email" autoComplete="email" /></label>
+            {live ? (
+              <>
+                <button className="btn btn-primary btn-lg" onClick={() => sendCode('/a/ops')} disabled={busy}>Send one-time code</button>
+                <div className="small muted">Sandbox: email code. Passkeys replace this before go-live. Every admin action is logged.</div>
+              </>
+            ) : (
+              <>
+                <button className="btn btn-primary btn-lg" onClick={() => nav('/a/ops')}><Icon name="key" /> Sign in with passkey</button>
+                <div className="small muted">Admin access is passkey-only and every action is logged.</div>
+              </>
+            )}
           </>
         )}
       </div>

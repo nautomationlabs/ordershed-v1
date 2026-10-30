@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useApi } from '@/api/client';
+import { actions, ApiError, isLive, useApi } from '@/api/client';
 import { audit, rfqs, vendors } from '@/api/mock/data';
 import type { BuyerOrg, Dispute, EvalRow, MeterRow, StuckItem, TemplateRow, VerificationCase, Vendor } from '@/api/types';
 import { TIER_LABEL } from '@/api/types';
@@ -53,17 +53,43 @@ export function OpsHome() {
 
 export function Verification() {
   const { data, isLoading, error, refetch } = useApi('verification');
-  const [active, setActive] = useState('VER-000214');
-  const c = data?.find((x) => x.id === active);
+  const [active, setActive] = useState<string | null>(null);
+  const [rejecting, setRejecting] = useState(false);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ tone: 'good' | 'crit' | 'info'; text: string } | null>(null);
+  const c = data?.find((x) => x.id === (active ?? data[0]?.id));
+  const live = isLive('verification');
+
+  async function review(decision: 'approve' | 'reject') {
+    if (!c || !live) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await actions.reviewVerification(c.id, decision, decision === 'reject' ? reason : undefined);
+      setMsg(r.needsSecondReviewer
+        ? { tone: 'info', text: `First approval recorded. A different reviewer must confirm ${c.id}.` }
+        : { tone: r.status === 'Approved' ? 'good' : 'crit', text: `${c.id} ${r.status.toLowerCase()}. Logged in the audit chain.` });
+      setRejecting(false);
+      setReason('');
+      await refetch();
+    } catch (e) {
+      setMsg({ tone: 'crit', text: e instanceof ApiError ? e.message : 'Could not save the review.' });
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="page">
       <PageHeader
         title="Verification queue"
         question="Is this supplier who they say they are, and which tier have they earned?"
         meta="Four-eyes above Document-verified: the second reviewer must be a different person. Admin can change a tier, never a rank."
-        primary={<button className="btn btn-primary" disabled={!c || c.status !== 'Pending'}>{c?.firstReviewer ? 'Confirm as second reviewer' : 'Approve as first reviewer'}</button>}
-        secondary={<button className="link link-crit">Reject with reason</button>}
+        primary={<button className="btn btn-primary" disabled={!c || c.status !== 'Pending' || busy} onClick={() => review('approve')}>{c && c.to < 2 ? 'Approve' : c?.firstReviewer ? 'Confirm as second reviewer' : 'Approve as first reviewer'}</button>}
+        secondary={<button className="link link-crit" disabled={!c || c.status !== 'Pending'} onClick={() => setRejecting(true)}>Reject with reason</button>}
       />
+      {msg && <div className="mb-12"><Banner tone={msg.tone}>{msg.text}</Banner></div>}
       <div className="md">
         <DataTable<VerificationCase>
           id="verification"
@@ -72,8 +98,8 @@ export function Verification() {
           error={error}
           onRetry={() => refetch()}
           rowKey={(x) => x.id}
-          activeKey={active}
-          onOpen={(x) => setActive(x.id)}
+          activeKey={c?.id}
+          onOpen={(x) => { setActive(x.id); setRejecting(false); setMsg(null); }}
           empty={{ title: 'Queue is empty', body: 'New suppliers land here after JOIN.' }}
           columns={[
             { key: 'id', header: 'Case', render: (x) => <span className="mono">{x.id}</span> },
@@ -96,8 +122,14 @@ export function Verification() {
               <div className="label mt-16 mb-8">Reviews</div>
               <div className="doa" style={{ gridAutoColumns: '1fr' }}>
                 <div className={`doa-step ${c.firstReviewer ? 'done' : 'active'}`}><span className="label">First reviewer</span><span className="who">{c.firstReviewer ?? 'You'}</span><span className="small muted">{c.firstReviewer ? 'Approved' : 'Waiting'}</span></div>
-                <div className={`doa-step ${c.status === 'Approved' ? 'done' : c.firstReviewer ? 'active' : ''}`}><span className="label">Second reviewer</span><span className="who">{c.status === 'Approved' ? 'S. Rao' : c.firstReviewer ? 'You (D. Menon)' : '—'}</span><span className="small muted">{c.status === 'Approved' ? 'Approved' : 'Waiting'}</span></div>
+                {c.to >= 2 && <div className={`doa-step ${c.status === 'Approved' ? 'done' : c.firstReviewer ? 'active' : ''}`}><span className="label">Second reviewer</span><span className="who">{c.status === 'Approved' ? c.changedBy : c.firstReviewer ? 'A different reviewer' : '—'}</span><span className="small muted">{c.status === 'Approved' ? 'Approved' : 'Waiting'}</span></div>}
               </div>
+              {rejecting && (
+                <div className="col gap-8 mt-16">
+                  <label className="field"><span className="label">Reason (sent to the supplier)</span><textarea className="input" rows={3} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="For example: GST legal name does not match the bank account name." /></label>
+                  <div className="row gap-16"><button className="btn" disabled={busy || reason.trim().length < 5 || !live} onClick={() => review('reject')}>Reject {c.id}</button><button className="link" onClick={() => setRejecting(false)}>Cancel</button></div>
+                </div>
+              )}
             </Panel>
           )}
         </div>

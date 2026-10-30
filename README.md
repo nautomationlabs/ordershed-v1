@@ -17,7 +17,9 @@ apps/web/            React + TypeScript frontend (Buyer, Supplier, Admin)
   Dockerfile         nginx image for ECS Fargate
 infra/aws/           CloudFormation: S3 + CloudFront (OAC, security headers, SPA routing)
 .github/workflows/   CI: typecheck, test, build, deploy to S3/CloudFront via OIDC
-services/            backend (next phase)
+services/api/        backend: Fastify + PostgreSQL (row-level security, audit chain, sign-in, supplier Join)
+  migrations/        SQL schema, applied in order
+docker-compose.yml   local PostgreSQL 16 (pgvector)
 docs/                progress report, remaining work, screenshots
 ```
 
@@ -36,6 +38,28 @@ npm run build        # production bundle in apps/web/dist
 Sandbox data is served in the browser (`VITE_API_MODE=mock`). Point at a backend with `VITE_API_MODE=http` and `VITE_API_BASE_URL`. See `apps/web/.env.example`.
 
 Review list states on any list screen by adding `?demo=empty`, `?demo=loading` or `?demo=error` to the URL.
+
+## Backend (M1)
+
+Requires Docker Desktop.
+
+```bash
+npm run db:up        # PostgreSQL on localhost:5433
+npm run migrate      # apply services/api/migrations
+npm run seed         # dev users: ops@ordershed.test (admin), verifier@ordershed.test, rohan@kestrel.test (buyer)
+npm run dev:api      # API on http://localhost:8080 (codes are printed in this console)
+npm run test:api     # 51 tests against a real database (tenant isolation, sealed bids, audit chain, Join)
+```
+
+With the API running, `npm run dev` serves the web app in **hybrid** mode (`apps/web/.env.development.local`):
+Join, Sign-in, Verification queue and Audit log call the real API; every other screen stays on sandbox data.
+Try it: open http://localhost:5173/s/join, use GSTIN `33AAKFV2210M1Z7` (fictional) and any mobile number;
+the WhatsApp code appears in the API console. Then sign in at /login as Admin with `ops@ordershed.test`.
+
+Browser end-to-end check of the whole flow: `API_LOG=<api console log file> node apps/web/scripts/e2e-m1.mjs`.
+
+Integrations switch by environment variable (see `.env.example`): `WHATSAPP_MODE=console|cloud`,
+`GST_PROVIDER=stub|cashfree`. Secrets live only in the git-ignored `.env`.
 
 ## Screenshots
 

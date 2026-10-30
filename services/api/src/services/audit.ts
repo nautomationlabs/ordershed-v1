@@ -30,6 +30,12 @@ const LABELS: Record<string, string> = {
   'whatsapp.opted_out': 'WhatsApp opt-out',
 };
 
+const ROLES: Record<string, string> = {
+  buyer: 'Buyer', purchase_head: 'Purchase head', plant_head: 'Plant head', finance: 'Finance', viewer: 'Viewer',
+  owner: 'Supplier owner', quoting: 'Quoting', dispatch: 'Dispatch',
+  ops: 'Ops', verifier: 'Verifier', platform_finance: 'Platform finance', super_admin: 'Super-admin',
+};
+
 /** Same shape as the frontend's AuditEvent (apps/web/src/api/types.ts). */
 export interface AuditEventView {
   seq: number; at: string; actor: string; role: string; action: string; doc: string; detail: string; hash: string; prev: string;
@@ -46,7 +52,7 @@ export async function listAudit(tx: Tx, limit = 200): Promise<AuditEventView[]> 
     seq: Number(r.seq),
     at: (r.occurred_at as Date).toISOString(),
     actor: r.actor_label,
-    role: r.actor_role,
+    role: ROLES[r.actor_role] ?? r.actor_role,
     action: LABELS[r.action] ?? r.action,
     doc: r.doc ?? '—',
     detail: r.summary ?? '',

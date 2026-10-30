@@ -6,7 +6,9 @@ import { fileURLToPath, URL } from 'node:url';
 export default defineConfig({
   plugins: [react()],
   resolve: { alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) } },
-  server: { port: 5173 },
+  // /v1 goes to the local API (services/api); in AWS, CloudFront routes /v1/* to the API, same origin.
+  server: { port: 5173, proxy: { '/v1': 'http://localhost:8080' } },
+  preview: { port: 4173, proxy: { '/v1': 'http://localhost:8080' } },
   build: {
     sourcemap: true,
     rollupOptions: {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { actions, ApiError, isLive, type GstRecord } from '@/api/client';
 import { SUPPLIER_ME } from '@/api/mock/data';
 import { CheckRow } from '@/components/domain';
 import { Icon } from '@/components/Icon';
@@ -8,9 +9,150 @@ import { BRAND } from '@/config/brand';
 import { PhoneShell } from '@/shells/PhoneShell';
 
 const LANGS = ['English', 'தமிழ்', 'हिन्दी', 'ಕನ್ನಡ', 'తెలుగు'];
+const LANG_CODE: Record<string, string> = { English: 'en', 'தமிழ்': 'ta', 'हिन्दी': 'hi', 'ಕನ್ನಡ': 'kn', 'తెలుగు': 'te' };
 const TYPES = ['Foundry', 'Forging', 'Machining', 'Fabrication', 'Valves & pumps', 'Rubber & polymer', 'T&D hardware', 'Tool room', 'Trader'];
 
 export function Join() {
+  return isLive('join') ? <JoinLive /> : <JoinSandbox />;
+}
+
+/** Join against the backend: GST lookup → WhatsApp code → business types → supplier org + verification case. */
+function JoinLive() {
+  const nav = useNavigate();
+  const [step, setStep] = useState(0);
+  const [lang, setLang] = useState('English');
+  const [gstin, setGstin] = useState('');
+  const [gst, setGst] = useState<GstRecord | null>(null);
+  const [phone, setPhone] = useState('');
+  const [sent, setSent] = useState<{ applicationId: string; sentTo: string } | null>(null);
+  const [code, setCode] = useState('');
+  const [types, setTypes] = useState<string[]>([]);
+  const [joined, setJoined] = useState<{ org: { number: string; name: string }; verification: { number: string } } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function run(fn: () => Promise<void>) {
+    setBusy(true);
+    setErr(null);
+    try {
+      await fn();
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : 'Something went wrong. Try again.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const fetchGst = () => run(async () => setGst(await actions.joinLookup(gstin)));
+  const sendCode = () => run(async () => setSent(await actions.joinStart(gst!.gstin, phone)));
+  const finish = () =>
+    run(async () => {
+      try {
+        setJoined(await actions.joinVerify({ applicationId: sent!.applicationId, code, businessTypes: types, language: LANG_CODE[lang] }));
+        setStep(3);
+      } catch (e) {
+        if (e instanceof ApiError && e.code.startsWith('code_')) setStep(1);   // wrong or expired code: back to the code field
+        throw e;
+      }
+    });
+
+  const canJoin = gst && gst.status === 'Active' && !gst.alreadyRegistered;
+  const btn = (label: string, onClick: () => void, disabled = false) => (
+    <button className="btn btn-primary btn-lg btn-block" onClick={onClick} disabled={busy || disabled}>{busy ? 'Please wait…' : label}</button>
+  );
+  const cta =
+    step === 0 ? (gst ? btn('This is my business', () => setStep(1), !canJoin) : btn('Fetch from GST', fetchGst, gstin.trim().length < 15))
+    : step === 1 ? (sent ? btn('Continue', () => setStep(2), code.trim().length !== 6) : btn('Send code on WhatsApp', sendCode, phone.trim().length < 10))
+    : step === 2 ? btn('Join', finish)
+    : btn('See open items', () => nav('/s/open'));
+
+  return (
+    <PhoneShell
+      title="Join"
+      tabs={false}
+      cta={cta}
+      right={
+        <select className="select" style={{ width: 'auto', height: 32, fontSize: 13 }} value={lang} onChange={(e) => setLang(e.target.value)} aria-label="Language">
+          {LANGS.map((l) => <option key={l}>{l}</option>)}
+        </select>
+      }
+    >
+      <div className="progress mb-16"><span style={{ width: `${((step + 1) / 4) * 100}%` }} /></div>
+      {err && <div className="mb-12"><Banner tone="crit">{err}</Banner></div>}
+      {step === 0 && (
+        <div className="col gap-16">
+          <div>
+            <h2 style={{ fontSize: 20 }}>Get engineering RFQs from verified buyers</h2>
+            <p className="muted mt-4">Free for suppliers, always. We never sell your rank or your contacts.</p>
+          </div>
+          <label className="field">
+            <span className="label">GSTIN</span>
+            <input className="input input-lg mono" value={gstin} onChange={(e) => { setGstin(e.target.value.toUpperCase()); setGst(null); }} maxLength={15} inputMode="text" autoCapitalize="characters" placeholder="15 characters from your GST certificate" />
+          </label>
+          {gst && (
+            <div className="p-card">
+              <div className="label mb-8">Fetched from GST</div>
+              <div className="strong" style={{ fontSize: 15 }}>{gst.legalName}</div>
+              <div className="small muted">{[gst.tradeName && `Trade name: ${gst.tradeName}`, gst.constitution].filter(Boolean).join(' · ')}</div>
+              {gst.address && <div className="small mt-8">{gst.address}</div>}
+              <hr className="divider" />
+              <div className="checks">
+                <CheckRow state={gst.status === 'Active' ? 'pass' : 'fail'} label={`GST status ${gst.status ?? 'unknown'}`} detail={gst.registeredOn ? `Registered ${gst.registeredOn.split('-').reverse().join('-')}` : undefined} />
+                <CheckRow state={gst.alreadyRegistered ? 'warn' : 'pass'} label={gst.alreadyRegistered ? 'Already on Ordershed' : 'Not yet on Ordershed'} />
+              </div>
+              {gst.alreadyRegistered && <div className="small mt-8">This business has joined. <Link to="/login">Sign in</Link> with the WhatsApp number used to join.</div>}
+            </div>
+          )}
+          <div className="small muted">
+            Prefer WhatsApp? Send <span className="mono strong">JOIN</span> to <span className="mono">{BRAND.whatsappNumber}</span>.
+          </div>
+        </div>
+      )}
+      {step === 1 && (
+        <div className="col gap-16">
+          <h2 style={{ fontSize: 20 }}>Your WhatsApp number</h2>
+          <p className="muted">RFQs, questions and POs come here. One message, one ask.</p>
+          <label className="field">
+            <span className="label">Mobile</span>
+            <div className="input-affix"><span className="affix">+91</span><input className="input input-lg mono" value={phone} onChange={(e) => { setPhone(e.target.value); setSent(null); }} inputMode="tel" placeholder="98430 21877" /></div>
+          </label>
+          {sent && (
+            <label className="field">
+              <span className="label">Code sent on WhatsApp</span>
+              <input className="input input-lg mono" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))} inputMode="numeric" autoComplete="one-time-code" style={{ letterSpacing: '0.3em' }} autoFocus />
+              <span className="hint">Sent to {sent.sentTo}. Valid for 10 minutes. <button className="link" onClick={sendCode} disabled={busy}>Send again</button></span>
+            </label>
+          )}
+        </div>
+      )}
+      {step === 2 && (
+        <div className="col gap-16">
+          <h2 style={{ fontSize: 20 }}>What do you make?</h2>
+          <p className="muted">Pick all that fit. You can add products and photos later.</p>
+          <div className="chips-sel">
+            {TYPES.map((t) => (
+              <button key={t} className={`chip-sel${types.includes(t) ? ' on' : ''}`} onClick={() => setTypes(types.includes(t) ? types.filter((x) => x !== t) : [...types, t])}>
+                {t}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+      {step === 3 && joined && (
+        <div className="col gap-16">
+          <div className="p-card" style={{ borderColor: 'var(--good)', background: 'var(--good-tint)' }}>
+            <div className="row"><span className="good"><Icon name="check" size={18} /></span><h2 style={{ fontSize: 18 }}>You are in</h2></div>
+            <p className="mt-8">{joined.org.name} joined as <span className="mono">{joined.org.number}</span>.</p>
+          </div>
+          <div className="row"><span className="label">Verification</span><span className="spacer" /><TierBadge tier={0} /></div>
+          <Banner tone="info">Our team is checking your GST record (case <span className="mono">{joined.verification.number}</span>). Next tier: Document-verified. Buyers see your tier; it never changes your rank.</Banner>
+        </div>
+      )}
+    </PhoneShell>
+  );
+}
+
+function JoinSandbox() {
   const [params] = useSearchParams();
   const nav = useNavigate();
   const [step, setStep] = useState(Number(params.get('step') ?? 0));

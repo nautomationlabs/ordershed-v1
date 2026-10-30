@@ -74,7 +74,7 @@ export async function startJoin(deps: JoinDeps, input: { gstin: string; phone: s
   return { applicationId: created.applicationId, sentTo: maskPhone(phone), expiresInSec: CODE_TTL_MIN * 60 };
 }
 
-const BUSINESS_TYPES = ['Foundry', 'Machining', 'Forging', 'Sheet metal', 'Fabrication', 'Plastics', 'Rubber', 'Electrical', 'Fasteners', 'Tool room', 'Heat treatment', 'Surface treatment'];
+const BUSINESS_TYPES = ['Foundry', 'Forging', 'Machining', 'Fabrication', 'Valves & pumps', 'Rubber & polymer', 'T&D hardware', 'Tool room', 'Trader'];  // same list as the Join screen
 
 /** Step 3: correct code → the supplier org exists, owner signed in, verification case in the admin queue. */
 export async function completeJoin(

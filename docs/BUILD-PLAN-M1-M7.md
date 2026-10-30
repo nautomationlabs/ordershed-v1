@@ -16,12 +16,13 @@ Each milestone ends when its "Done when" case passes with real data.
 ## M1: Foundation and supplier Join
 - [ ] Deploy the frontend to the sandbox account (CloudFormation template and pipeline)
 - [ ] Backend infrastructure as code: TypeScript API on ECS Fargate, ALB + WAF, RDS PostgreSQL, S3, SQS, Secrets Manager
-- [ ] Order ontology schema, numbered documents per type, row-level security per organisation
-- [ ] Hash-chained audit log, daily chain check, anchors in S3 Object Lock (72 months)
-- [ ] Metering events (cost per RFQ)
-- [ ] Sign-in with Cognito: buyer email OTP, supplier WhatsApp OTP, admin passkey; roles enforced in the API
-- [ ] Supplier Join: GSTIN lookup, WhatsApp OTP, JOIN keyword, entry in the verification queue
-- [ ] Connect the Join, Verification queue and Audit log screens to the real API
+- [x] Order ontology schema, numbered documents per type, row-level security per organisation
+- [x] Hash-chained audit log with full-chain verification (daily check and S3 Object Lock anchors: with the AWS deploy)
+- [x] Metering events (cost per RFQ)
+- [x] Sign-in: buyer and admin email code, supplier WhatsApp code; roles enforced in the API and the database
+- [ ] Cognito / Microsoft SSO and admin passkeys (before go-live)
+- [x] Supplier Join: GSTIN lookup, WhatsApp OTP, JOIN keyword, entry in the verification queue
+- [x] Connect the Join, Verification queue and Audit log screens to the real API
 
 Done when: a real Hosur supplier joins with their GSTIN on WhatsApp, appears in the verification queue, and both events sit in a verified audit chain.
 
