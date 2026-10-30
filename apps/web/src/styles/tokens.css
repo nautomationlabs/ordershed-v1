@@ -1,0 +1,40 @@
+/* Design tokens — "SAP-grade, but beautiful". Light theme only. */
+:root {
+  --ink: #111418;
+  --muted: #5b6470;
+  --faint: #8a929c;
+  --border: #e3e6ea;
+  --border-strong: #cfd4da;
+  --surface: #f6f7f9;
+  --paper: #ffffff;
+  --accent: #1f4fd8;
+  --accent-hover: #163ba3;
+  --accent-tint: #eef3fd;
+  --good: #0f766e;
+  --good-tint: #e8f4f2;
+  --warning: #b45309;
+  --warning-tint: #fdf3e7;
+  --critical: #b91c1c;
+  --critical-tint: #fcecec;
+  --neutral-tint: #eef0f3;
+
+  --font-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --font-body: 'Public Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  --fs-body: 13px;
+  --fs-small: 12px;
+  --fs-label: 11px;
+  --radius: 4px;
+
+  --sidebar-w: 224px;
+  --topbar-h: 48px;
+  --footer-h: 28px;
+  --row-h: 34px;
+  --head-h: 32px;
+  --touch: 44px;
+}
+
+@media (max-width: 640px) {
+  :root { --fs-body: 14px; }
+}

@@ -1,0 +1,266 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ordershed Frontend Progress</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700&family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600&display=swap"><style>
+/* Layout: a single reading column (max 1120px) with a full-width screenshot gallery per role. Light only, per the product brief. */
+:root {
+  --ink: #111418; --muted: #5b6470; --faint: #8a929c; --border: #e3e6ea; --surface: #f6f7f9; --paper: #ffffff;
+  --accent: #1f4fd8; --tint: #eef3fd; --good: #0f766e; --good-tint: #e8f4f2; --warn: #b45309; --warn-tint: #fdf3e7;
+  --display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --body: 'Public Sans', 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+  color-scheme: light;
+}
+body { background: var(--surface); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding-block: 32px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3 { font-family: var(--display); font-weight: 600; margin: 0; text-wrap: balance; letter-spacing: -0.005em; }
+h1 { font-size: clamp(26px, 4vw, 34px); line-height: 1.15; }
+h2 { font-size: 20px; }
+h3 { font-size: 15px; }
+p { margin: 0; max-width: 68ch; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+.strong { font-weight: 600; }
+.label { font-family: var(--display); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.masthead { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+.mark { width: 26px; height: 26px; border-radius: 4px; background: var(--ink); display: inline-flex; align-items: center; justify-content: center; }
+.brand { font-family: var(--display); font-weight: 700; font-size: 17px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 3px; font-size: 12px; font-weight: 600; background: var(--good-tint); color: var(--good); }
+.chip::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip.warn { background: var(--warn-tint); color: var(--warn); }
+.spacer { flex: 1; }
+.meta { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.intro { display: grid; gap: 14px; padding-block: 28px 8px; }
+.intro p { font-size: 16px; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); border: 1px solid var(--border); border-radius: 4px; background: var(--paper); margin-top: 20px; }
+.fact { padding: 14px 16px; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); margin: 0 -1px -1px 0; }
+.fact .v { font-family: var(--mono); font-size: 24px; margin-top: 4px; }
+.fact .s { font-size: 12px; color: var(--muted); }
+section.block { margin-top: 44px; display: grid; gap: 14px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.card { background: var(--paper); border: 1px solid var(--border); border-radius: 4px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.src { display: inline-block; font-size: 10.5px; font-weight: 600; padding: 0 5px; height: 17px; line-height: 15px; border: 1px solid #bcdcd8; color: var(--good); border-radius: 2px; background: var(--paper); vertical-align: 1px; }
+.group { margin-top: 28px; }
+.group-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 14px; }
+.group-head p { color: var(--muted); font-size: 14px; }
+.group-head .n { margin-left: auto; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.shots { display: grid; gap: 18px; }
+.shots.desk { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+.shots.phone { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+figure { margin: 0; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.thumb { display: block; padding: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--paper); cursor: zoom-in; overflow: hidden; width: 100%; }
+.thumb:hover { border-color: var(--accent); }
+.thumb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.desk .thumb { aspect-ratio: 16 / 10; }
+.phone .thumb { aspect-ratio: 390 / 700; }
+.thumb img { width: 100%; height: 100%; object-fit: cover; object-position: top left; display: block; max-width: 100%; }
+figcaption { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; font-size: 13px; }
+figcaption .t { font-weight: 600; }
+figcaption .new { justify-self: start; font-size: 10.5px; font-weight: 600; color: var(--accent); background: var(--tint); padding: 0 6px; border-radius: 3px; height: 18px; line-height: 18px; }
+figcaption .c { grid-column: 1 / -1; color: var(--muted); }
+.tablewrap { overflow-x: auto; background: var(--paper); border: 1px solid var(--border); border-radius: 4px; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 640px; }
+th { text-align: left; font-family: var(--display); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); background: var(--surface); padding: 9px 12px; border-bottom: 1px solid var(--border); }
+td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+.foot { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+.lightbox { position: fixed; inset: 0; background: rgba(17, 20, 24, 0.86); z-index: 50; display: grid; grid-template-rows: auto 1fr; padding-top: env(safe-area-inset-top, 0px); }
+.lightbox .bar { display: flex; align-items: center; gap: 12px; padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px)); color: #fff; font-family: var(--display); font-weight: 600; }
+.lightbox .bar button { margin-left: auto; background: #fff; color: var(--ink); border: 0; border-radius: 4px; height: 32px; padding: 0 12px; font: 600 13px var(--body); cursor: pointer; }
+.lightbox .scroll { overflow: auto; padding: 0 16px 24px; text-align: center; }
+.lightbox img { max-width: min(1600px, 100%); height: auto; border-radius: 4px; background: #fff; }
+@media (prefers-reduced-motion: no-preference) { .thumb img { transition: transform .2s; } .thumb:hover img { transform: scale(1.01); } }
+
+@page { size: A4; margin: 12mm 11mm; }
+@media print {
+  body { background: #fff; font-size: 10.5pt; }
+  .wrap { max-width: none; padding: 0; }
+  .cols { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .card { padding: 10px; font-size: 9.5pt; }
+  .facts { grid-template-columns: repeat(5, 1fr); }
+  .shots.desk { grid-template-columns: 1fr; gap: 6mm; }
+  .shots.phone { grid-template-columns: repeat(4, 1fr); gap: 5mm; }
+  .desk .thumb, .phone .thumb { aspect-ratio: auto; border: 1px solid var(--border); text-align: left; }
+  .desk .thumb img { width: auto; max-width: 100%; height: auto; max-height: 108mm; object-fit: contain; margin: 0 auto; }
+  .phone .thumb img { height: auto; }
+  figure { break-inside: avoid; gap: 4px; }
+  figcaption { font-size: 9pt; }
+  .group { break-inside: auto; }
+  .group-head { break-after: avoid; }
+  .card, tr { break-inside: avoid; }
+}
+</style></head><body>
+<div class="wrap">
+  <header class="masthead">
+    <span class="mark"><svg width="13" height="13" viewBox="0 0 12 12" aria-hidden="true"><path d="M1 2h10v2H1zM1 5h7v2H1zM1 8h10v2H1z" fill="#fff"/></svg></span>
+    <span class="brand">Ordershed</span>
+    <span class="label">working name</span>
+    <span class="spacer"></span>
+    <span class="chip">Frontend complete</span>
+    <span class="meta">Status as of 22-10-2026 · v0.1.0 · sandbox</span>
+  </header>
+
+  <div class="intro">
+    <span class="label">Progress report · work so far</span>
+    <h1>Progress so far: the full product is clickable across buyer, supplier and our ops console</h1>
+    <p>The frontend is complete for all three roles as a working web app: SAP-style structure, numbered documents, dense tables, document flow and a command bar, with a clean modern finish. Every screen runs on a fictional sandbox dataset through a typed API layer, so the backend plugs in without changing a screen. Hosting on AWS is defined as code and ready to deploy.</p>
+    <div class="facts">
+      <div class="fact"><span class="label">Screens & states</span><div class="v">57</div><div class="s">in this report</div></div>
+      <div class="fact"><span class="label">Roles</span><div class="v">3</div><div class="s">Buyer · Supplier · Admin</div></div>
+      <div class="fact"><span class="label">Canvas review items</span><div class="v">11/11</div><div class="s">KYB, Compare, GRN, Admin …</div></div>
+      <div class="fact"><span class="label">Unit tests</span><div class="v">16/16</div><div class="s">money maths, 3-way match, DoA</div></div>
+      <div class="fact"><span class="label">Type errors</span><div class="v">0</div><div class="s">TypeScript strict</div></div>
+    </div>
+  </div>
+
+  <section class="block">
+    <h2>Built so far</h2>
+    <div class="cols">
+      <div class="card"><span class="label">Foundation</span><ul>
+        <li>React + TypeScript web app, code split by role</li>
+        <li>Typed API layer: runs on sandbox data; the real backend plugs in behind it</li>
+        <li>Design system: Archivo, Public Sans, IBM Plex Mono; flat, 1 px rules, 4 px radius</li>
+        <li>Desktop shell with 224 px sidebar and footer key bar; phone shell with four tabs</li>
+      </ul></div>
+      <div class="card"><span class="label">Shared components</span><ul>
+        <li>Dense table: sort, filter, column chooser, saved layout, bulk select, export, keyboard</li>
+        <li>Status chip (word + colour), source tag on every number</li>
+        <li>"Proposed by AI" box with confidence and Approve / Edit</li>
+        <li>Document flow, DoA strip, commitment card, sealed-bid hash, command bar</li>
+      </ul></div>
+      <div class="card"><span class="label">Rules built into the code</span><ul>
+        <li>Money is computed in code: normalised and landed cost, savings, 3-way match, DoA</li>
+        <li>A number cannot render without its source <span class="src">Computed</span></li>
+        <li>Nothing AI-drafted is sent without a person's tap</li>
+        <li>Buyer name hidden from suppliers until award; floor price private; tier never changes rank</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>Screens</h2>
+    <p class="muted">Select any screenshot to see it full size. Data is fictional sandbox data.</p>
+    <section class="group"><div class="group-head"><h3>Entry</h3><p>Sign-in, buyer sign-up and the self-serve quote page.</p><span class="n">3</span></div>
+<div class="shots desk">
+<figure><button class="thumb" type="button" data-src="shots/01-sign-in.jpg" data-title="Sign in" aria-label="Open Sign in full size"><img src="shots/01-sign-in.jpg" alt="Sign in screen" loading="lazy"></button><figcaption><span class="t">Sign in</span><span class="c">Three roles, three methods: buyer email OTP or Microsoft SSO, supplier WhatsApp OTP with GSTIN as the org key, admin passkey.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/02-buyer-signup-kyb.jpg" data-title="Buyer sign-up &amp; KYB" aria-label="Open Buyer sign-up &amp; KYB full size"><img src="shots/02-buyer-signup-kyb.jpg" alt="Buyer sign-up &amp; KYB screen" loading="lazy"></button><figcaption><span class="t">Buyer sign-up &amp; KYB</span><span class="c">One field at a time. The country picks the ID (GSTIN, Handelsregister, EIN, Companies House, UAE licence), then a register lookup confirms the company.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/03-get-a-quote.jpg" data-title="Get a quote" aria-label="Open Get a quote full size"><img src="shots/03-get-a-quote.jpg" alt="Get a quote screen" loading="lazy"></button><figcaption><span class="t">Get a quote</span><span class="c">No account needed. Upload a drawing, see what the AI read, get an indicative band with its source, then hand over to Create request.</span></figcaption></figure>
+</div></section>
+<section class="group"><div class="group-head"><h3>Buyer · sourcing</h3><p>Desktop 1440 × 900. From drawing to award.</p><span class="n">10</span></div>
+<div class="shots desk">
+<figure><button class="thumb" type="button" data-src="shots/10-buyer-home.jpg" data-title="Home" aria-label="Open Home full size"><img src="shots/10-buyer-home.jpg" alt="Home screen" loading="lazy"></button><figcaption><span class="t">Home</span><span class="c">What needs me today? The three key numbers, decisions waiting, commitments due, RFQs in flight, payments on hold.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/11-create-request.jpg" data-title="Create request" aria-label="Open Create request full size"><img src="shots/11-create-request.jpg" alt="Create request screen" loading="lazy"></button><figcaption><span class="t">Create request</span><span class="c">Drawing on the left with numbered source spans; extracted fields on the right with confidence. Fields below 0.75 must be confirmed before suppliers see anything.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/12-find-vendors.jpg" data-title="Find vendors" aria-label="Open Find vendors full size"><img src="shots/12-find-vendors.jpg" alt="Find vendors screen" loading="lazy"></button><figcaption><span class="t">Find vendors</span><span class="c">Ranked by similar parts, capability, OTD and distance. Verification tier kept separate from rank. Preview of the WhatsApp RFQ, buyer name hidden.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/13-rfx-list.jpg" data-title="RFx" aria-label="Open RFx full size"><img src="shots/13-rfx-list.jpg" alt="RFx screen" loading="lazy"></button><figcaption><span class="t">RFx</span><span class="c">Every RFQ by status, with bulk reminders and due-date changes.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/14-rfq-view.jpg" data-title="RFQ view" aria-label="Open RFQ view full size"><img src="shots/14-rfq-view.jpg" alt="RFQ view screen" loading="lazy"></button><figcaption><span class="t">RFQ view</span><span class="c">Document flow, supplier status and a sealed hash per quote.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/15-compare-quotes.jpg" data-title="Compare quotes" aria-label="Open Compare quotes full size"><img src="shots/15-compare-quotes.jpg" alt="Compare quotes screen" loading="lazy"></button><figcaption><span class="t">Compare quotes</span><span class="c">EXW, tooling and normalised price, each source-tagged, against the should-cost band. Self-declared and outlier quotes are flagged, not hidden.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/16-compare-landed-cost-drawer.jpg" data-title="Landed-cost drawer" aria-label="Open Landed-cost drawer full size"><img src="shots/16-compare-landed-cost-drawer.jpg" alt="Landed-cost drawer screen" loading="lazy"></button><figcaption><span class="t">Landed-cost drawer</span><span class="c">Landed cost to Stuttgart in EUR. Every line shows its source: supplier quote, freight quote, HS duty rate, or computed.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/17-award-decision-pack.jpg" data-title="Award &amp; decision pack" aria-label="Open Award &amp; decision pack full size"><img src="shots/17-award-decision-pack.jpg" alt="Award &amp; decision pack screen" loading="lazy"></button><figcaption><span class="t">Award &amp; decision pack</span><span class="c">Recommendation, full decision-pack checklist, Delegation of Authority strip (L2: Buyer then Purchase head) and what happens on approval.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/18-reverse-auction.jpg" data-title="Reverse auction" aria-label="Open Reverse auction full size"><img src="shots/18-reverse-auction.jpg" alt="Reverse auction screen" loading="lazy"></button><figcaption><span class="t">Reverse auction</span><span class="c">Phase 2. Rank-only lots, auto-extension, pause.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/36-command-bar.jpg" data-title="Command bar" aria-label="Open Command bar full size"><img src="shots/36-command-bar.jpg" alt="Command bar screen" loading="lazy"></button><figcaption><span class="t">Command bar</span><span class="c">Press / and type PO 456, RFQ 123, vendor hosur or new rfq, like SAP transaction codes.</span></figcaption></figure>
+</div></section>
+<section class="group"><div class="group-head"><h3>Buyer · follow-through</h3><p>Commitments, orders, documents, money.</p><span class="n">8</span></div>
+<div class="shots desk">
+<figure><button class="thumb" type="button" data-src="shots/19-commitments.jpg" data-title="Commitments" aria-label="Open Commitments full size"><img src="shots/19-commitments.jpg" alt="Commitments screen" loading="lazy"></button><figcaption><span class="t">Commitments</span><span class="c">Every promise is a card with owner and due date. Two reminders, then an ops task.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/20-queries-chat.jpg" data-title="Queries &amp; chat" aria-label="Open Queries &amp; chat full size"><img src="shots/20-queries-chat.jpg" alt="Queries &amp; chat screen" loading="lazy"></button><figcaption><span class="t">Queries &amp; chat</span><span class="c">Supplier questions with owner and deadline. AI drafts the answer; the buyer approves before it is published to all invited suppliers.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/21-masked-call.jpg" data-title="Masked call" aria-label="Open Masked call full size"><img src="shots/21-masked-call.jpg" alt="Masked call screen" loading="lazy"></button><figcaption><span class="t">Masked call</span><span class="c">Both sides dial a platform number; recorded with notice; AI summary waits for approval.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/22-orders.jpg" data-title="Orders" aria-label="Open Orders full size"><img src="shots/22-orders.jpg" alt="Orders screen" loading="lazy"></button><figcaption><span class="t">Orders</span><span class="c">List and detail side by side. PO lines with HSN and GST, progress, document flow RFQ → PO → ACK → ASN → GRN → INV.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/23-shipments-crosscheck.jpg" data-title="Shipments" aria-label="Open Shipments full size"><img src="shots/23-shipments-crosscheck.jpg" alt="Shipments screen" loading="lazy"></button><figcaption><span class="t">Shipments</span><span class="c">Dispatch cross-check before Shipped: quantity, HSN, GSTIN, value, Incoterm, consignee. A blocked example with an AI-drafted fix.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/24-transport-rfq.jpg" data-title="Transport RFQ" aria-label="Open Transport RFQ full size"><img src="shots/24-transport-rfq.jpg" alt="Transport RFQ screen" loading="lazy"></button><figcaption><span class="t">Transport RFQ</span><span class="c">Carrier bids with freight source tags.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/25-goods-receipt.jpg" data-title="Goods receipt" aria-label="Open Goods receipt full size"><img src="shots/25-goods-receipt.jpg" alt="Goods receipt screen" loading="lazy"></button><figcaption><span class="t">Goods receipt</span><span class="c">Shipped, received, accepted, rejected; the debit note is drafted automatically.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/26-payments-3way-match.jpg" data-title="Payments" aria-label="Open Payments full size"><img src="shots/26-payments-3way-match.jpg" alt="Payments screen" loading="lazy"></button><figcaption><span class="t">Payments</span><span class="c">Three-way match of PO, GRN and invoice on quantity, price, HSN and tax, computed in code. Held invoices and MSME due dates.</span></figcaption></figure>
+</div></section>
+<section class="group"><div class="group-head"><h3>Buyer · masters &amp; governance</h3><p>Vendors, materials, insight, audit, settings.</p><span class="n">9</span></div>
+<div class="shots desk">
+<figure><button class="thumb" type="button" data-src="shots/27-vendor-list.jpg" data-title="Vendor list" aria-label="Open Vendor list full size"><img src="shots/27-vendor-list.jpg" alt="Vendor list screen" loading="lazy"></button><figcaption><span class="t">Vendor list</span><span class="c">Verification tier, OTD, PPM, quotes and awards.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/28-vendor-view.jpg" data-title="Vendor view" aria-label="Open Vendor view full size"><img src="shots/28-vendor-view.jpg" alt="Vendor view screen" loading="lazy"></button><figcaption><span class="t">Vendor view</span><span class="c">Performance from GRNs, verification checklist, certificates; contacts hidden until award.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/29-vendor-onboarding.jpg" data-title="Vendor onboarding" aria-label="Open Vendor onboarding full size"><img src="shots/29-vendor-onboarding.jpg" alt="Vendor onboarding screen" loading="lazy"></button><figcaption><span class="t">Vendor onboarding</span><span class="c">Evidence and four-eyes approval.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/30-material-master.jpg" data-title="Material master" aria-label="Open Material master full size"><img src="shots/30-material-master.jpg" alt="Material master screen" loading="lazy"></button><figcaption><span class="t">Material master</span><span class="c">ERP mapping, price history, single-source flag, Material Data File.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/31-docs-library.jpg" data-title="Docs library" aria-label="Open Docs library full size"><img src="shots/31-docs-library.jpg" alt="Docs library screen" loading="lazy"></button><figcaption><span class="t">Docs library</span><span class="c">Domestic and export packs; every document linked to its PO line.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/32-intelligence.jpg" data-title="Intelligence" aria-label="Open Intelligence full size"><img src="shots/32-intelligence.jpg" alt="Intelligence screen" loading="lazy"></button><figcaption><span class="t">Intelligence</span><span class="c">Price index by part family with WPI overlay; import-substitution candidates.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/33-cpo-report.jpg" data-title="CPO report" aria-label="Open CPO report full size"><img src="shots/33-cpo-report.jpg" alt="CPO report screen" loading="lazy"></button><figcaption><span class="t">CPO report</span><span class="c">Savings vs last price and vs should-cost, reply time, RFQ to award.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/34-audit-log.jpg" data-title="Audit log" aria-label="Open Audit log full size"><img src="shots/34-audit-log.jpg" alt="Audit log screen" loading="lazy"></button><figcaption><span class="t">Audit log</span><span class="c">Hash-chained events with the previous and current hash; chain verified against S3 Object Lock.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/35-settings-doa.jpg" data-title="Settings &amp; DoA" aria-label="Open Settings &amp; DoA full size"><img src="shots/35-settings-doa.jpg" alt="Settings &amp; DoA screen" loading="lazy"></button><figcaption><span class="t">Settings &amp; DoA</span><span class="c">Approval levels, plants, users, SLAs and integrations, all versioned.</span></figcaption></figure>
+</div></section>
+<section class="group"><div class="group-head"><h3>List states</h3><p>Every list has designed empty, loading and error states.</p><span class="n">3</span></div>
+<div class="shots desk">
+<figure><button class="thumb" type="button" data-src="shots/37-state-empty.jpg" data-title="Empty" aria-label="Open Empty full size"><img src="shots/37-state-empty.jpg" alt="Empty screen" loading="lazy"></button><figcaption><span class="t">Empty</span><span class="c">Says what will appear and how to start.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/38-state-loading.jpg" data-title="Loading" aria-label="Open Loading full size"><img src="shots/38-state-loading.jpg" alt="Loading screen" loading="lazy"></button><figcaption><span class="t">Loading</span><span class="c">Skeleton rows in the table&#x27;s own layout.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/39-state-error.jpg" data-title="Error" aria-label="Open Error full size"><img src="shots/39-state-error.jpg" alt="Error screen" loading="lazy"></button><figcaption><span class="t">Error</span><span class="c">Says nothing was changed, shows the request ID, offers retry.</span></figcaption></figure>
+</div></section>
+<section class="group"><div class="group-head"><h3>Supplier · phone</h3><p>390 × 844, WhatsApp-first. Every action also exists as a WhatsApp message.</p><span class="n">13</span></div>
+<div class="shots phone">
+<figure><button class="thumb" type="button" data-src="shots/50-supplier-join.jpg" data-title="Join" aria-label="Open Join full size"><img src="shots/50-supplier-join.jpg" alt="Join screen" loading="lazy"></button><figcaption><span class="t">Join</span><span class="c">GSTIN fetches the legal name, address and status with checks. Language picker for English, Tamil, Hindi, Kannada, Telugu.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/51-supplier-join-approved.jpg" data-title="Join · approved" aria-label="Open Join · approved full size"><img src="shots/51-supplier-join-approved.jpg" alt="Join · approved screen" loading="lazy"></button><figcaption><span class="t">Join · approved</span><span class="c">Tier shown; next step is a site visit or video walk-through.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/52-supplier-profile.jpg" data-title="Profile" aria-label="Open Profile full size"><img src="shots/52-supplier-profile.jpg" alt="Profile screen" loading="lazy"></button><figcaption><span class="t">Profile</span><span class="c">One screen, six rows, done once.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/53-supplier-setup-export-roadmap.jpg" data-title="Export roadmap" aria-label="Open Export roadmap full size"><img src="shots/53-supplier-setup-export-roadmap.jpg" alt="Export roadmap screen" loading="lazy"></button><figcaption><span class="t">Export roadmap</span><span class="c">IEC, DSC, AD code, LUT, RCMC, e-BRC in order.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/54-supplier-open-items.jpg" data-title="Open items" aria-label="Open Open items full size"><img src="shots/54-supplier-open-items.jpg" alt="Open items screen" loading="lazy"></button><figcaption><span class="t">Open items</span><span class="c">Everything waiting on the supplier in one list.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/55-supplier-quote.jpg" data-title="Quote" aria-label="Open Quote full size"><img src="shots/55-supplier-quote.jpg" alt="Quote screen" loading="lazy"></button><figcaption><span class="t">Quote</span><span class="c">Five fields plus a private floor price that is never shown to buyers or used for ranking.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/56-supplier-quote-voice.jpg" data-title="Voice quote" aria-label="Open Voice quote full size"><img src="shots/56-supplier-quote-voice.jpg" alt="Voice quote screen" loading="lazy"></button><figcaption><span class="t">Voice quote</span><span class="c">A Tamil voice note becomes a confirmation card; nothing saves until Confirm.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/57-supplier-quote-decline.jpg" data-title="Decline" aria-label="Open Decline full size"><img src="shots/57-supplier-quote-decline.jpg" alt="Decline screen" loading="lazy"></button><figcaption><span class="t">Decline</span><span class="c">One tap, with a reason; declining never affects rank.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/58-supplier-catalogue.jpg" data-title="Catalogue" aria-label="Open Catalogue full size"><img src="shots/58-supplier-catalogue.jpg" alt="Catalogue screen" loading="lazy"></button><figcaption><span class="t">Catalogue</span><span class="c">PDF or photo read into product rows, proposed for approval.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/59-supplier-orders.jpg" data-title="Orders" aria-label="Open Orders full size"><img src="shots/59-supplier-orders.jpg" alt="Orders screen" loading="lazy"></button><figcaption><span class="t">Orders</span><span class="c">POs with the next action.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/60-supplier-order-chat.jpg" data-title="Orders &amp; chat" aria-label="Open Orders &amp; chat full size"><img src="shots/60-supplier-order-chat.jpg" alt="Orders &amp; chat screen" loading="lazy"></button><figcaption><span class="t">Orders &amp; chat</span><span class="c">Debit-note conversation with Accept or Raise an issue.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/61-supplier-dispatch-crosscheck.jpg" data-title="Dispatch cross-check" aria-label="Open Dispatch cross-check full size"><img src="shots/61-supplier-dispatch-crosscheck.jpg" alt="Dispatch cross-check screen" loading="lazy"></button><figcaption><span class="t">Dispatch cross-check</span><span class="c">Six checks before Shipped, with the exact fix for the one that failed.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/62-supplier-whatsapp-flow.jpg" data-title="WhatsApp flow" aria-label="Open WhatsApp flow full size"><img src="shots/62-supplier-whatsapp-flow.jpg" alt="WhatsApp flow screen" loading="lazy"></button><figcaption><span class="t">WhatsApp flow</span><span class="c">JOIN, new RFQ with Quote · Decline · Ask, voice quote confirmation, sealed receipt, cross-check result.</span></figcaption></figure>
+</div></section>
+<section class="group"><div class="group-head"><h3>Supplier · laptop</h3><p>Same data and actions for suppliers who prefer a bigger screen.</p><span class="n">3</span></div>
+<div class="shots desk">
+<figure><button class="thumb" type="button" data-src="shots/63-supplier-web-job-board.jpg" data-title="Job board" aria-label="Open Job board full size"><img src="shots/63-supplier-web-job-board.jpg" alt="Job board screen" loading="lazy"></button><figcaption><span class="t">Job board</span><span class="c">RFQs that fit the shop; buyer names hidden.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/64-supplier-web-job-pack.jpg" data-title="Job pack" aria-label="Open Job pack full size"><img src="shots/64-supplier-web-job-pack.jpg" alt="Job pack screen" loading="lazy"></button><figcaption><span class="t">Job pack</span><span class="c">Watermarked drawing and the quote form side by side.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/65-supplier-web-my-work.jpg" data-title="My work" aria-label="Open My work full size"><img src="shots/65-supplier-web-my-work.jpg" alt="My work screen" loading="lazy"></button><figcaption><span class="t">My work</span><span class="c">What is owed to whom, by when.</span></figcaption></figure>
+</div></section>
+<section class="group"><div class="group-head"><h3>Admin console</h3><p>Our own operations.</p><span class="n">8</span></div>
+<div class="shots desk">
+<figure><button class="thumb" type="button" data-src="shots/70-admin-ops-home.jpg" data-title="Ops home" aria-label="Open Ops home full size"><img src="shots/70-admin-ops-home.jpg" alt="Ops home screen" loading="lazy"></button><figcaption><span class="t">Ops home</span><span class="c">What is stuck, by severity and age, with the MVP targets.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/71-admin-verification.jpg" data-title="Verification queue" aria-label="Open Verification queue full size"><img src="shots/71-admin-verification.jpg" alt="Verification queue screen" loading="lazy"></button><figcaption><span class="t">Verification queue</span><span class="c">Evidence checklist and four-eyes review. Admin changes tier, never rank.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/72-admin-rfq-operations.jpg" data-title="RFQ operations" aria-label="Open RFQ operations full size"><img src="shots/72-admin-rfq-operations.jpg" alt="RFQ operations screen" loading="lazy"></button><figcaption><span class="t">RFQ operations</span><span class="c">Low-quote alerts, nudges, Phase A manual mode.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/73-admin-supplier-directory.jpg" data-title="Supplier directory" aria-label="Open Supplier directory full size"><img src="shots/73-admin-supplier-directory.jpg" alt="Supplier directory screen" loading="lazy"></button><figcaption><span class="t">Supplier directory</span><span class="c">Network by tier and activity. Admin sees every price, edits none.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/74-admin-buyer-orgs.jpg" data-title="Buyer organisations" aria-label="Open Buyer organisations full size"><img src="shots/74-admin-buyer-orgs.jpg" alt="Buyer organisations screen" loading="lazy"></button><figcaption><span class="t">Buyer organisations</span><span class="c">Each buyer company&#x27;s plan, company verification (KYB) status and free-trial end date, plus what an RFQ costs us to run in AI and messaging. Above ₹ 150 per RFQ it shows in red.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/75-admin-messaging.jpg" data-title="Messaging &amp; templates" aria-label="Open Messaging &amp; templates full size"><img src="shots/75-admin-messaging.jpg" alt="Messaging &amp; templates screen" loading="lazy"></button><figcaption><span class="t">Messaging &amp; templates</span><span class="c">Meta and DLT status, delivery, read and reply rates.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/76-admin-cost-models.jpg" data-title="Cost &amp; models" aria-label="Open Cost &amp; models full size"><img src="shots/76-admin-cost-models.jpg" alt="Cost &amp; models screen" loading="lazy"></button><figcaption><span class="t">Cost &amp; models</span><span class="c">What each RFQ costs us, step by step, and the accuracy tests an AI model change must pass before it ships.</span></figcaption></figure>
+<figure><button class="thumb" type="button" data-src="shots/77-admin-disputes-audit.jpg" data-title="Disputes &amp; audit" aria-label="Open Disputes &amp; audit full size"><img src="shots/77-admin-disputes-audit.jpg" alt="Disputes &amp; audit screen" loading="lazy"></button><figcaption><span class="t">Disputes &amp; audit</span><span class="c">Open disputes and hashed admin events.</span></figcaption></figure>
+</div></section>
+  </section>
+
+  <section class="block" style="break-before: page;">
+    <h2>Deployable on AWS (Mumbai)</h2>
+    <div class="cols">
+      <div class="card"><span class="label">Hosting</span><p>Private S3 bucket behind CloudFront with origin access control, strict security headers and SPA routing, as one CloudFormation template.</p></div>
+      <div class="card"><span class="label">Pipeline</span><p>GitHub Actions typechecks, tests and builds every change, then deploys on merge using short-lived AWS credentials. No stored keys.</p></div>
+      <div class="card"><span class="label">Container option</span><p>An nginx image for ECS Fargate, if we want the web app and API on the same platform.</p></div>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2>What comes next</h2>
+    <p>The backend is next: services, database, WhatsApp and the other integrations, the AI extraction pipeline, and production AWS. It is built milestone by milestone. Each milestone ends with a real case passing.</p>
+    <div class="tablewrap"><table><thead><tr><th>Milestone</th><th>Scope</th><th>Done when</th></tr></thead><tbody><tr><td class="mono strong">M1</td><td>Order ontology, numbering, audit chain, metering, sign-in for 3 roles, supplier Join with GST lookup and WhatsApp OTP</td><td class="muted">A real Hosur supplier joins on WhatsApp, lands in the verification queue, and both events sit in a verified audit chain.</td></tr><tr><td class="mono strong">M2</td><td>Catalogue extraction, buyer RFQ, drawing and data-sheet intake with confidence and source spans, trial rules</td><td class="muted">A real drawing becomes an RFQ draft; low-confidence fields are confirmed; extraction cost is under ₹ 20.</td></tr><tr><td class="mono strong">M3</td><td>Matching, sealed quoting on WhatsApp (Flow and voice), reminders</td><td class="muted">One real RFQ gets 3 or more sealed quotes over WhatsApp within 48 h.</td></tr><tr><td class="mono strong">M4</td><td>Compare, award with DoA, PO, domestic documents, dispatch cross-check</td><td class="muted">The real case goes from compare to approved award to an acknowledged PO; a planted HSN mismatch is caught.</td></tr><tr><td class="mono strong">M5</td><td>Negotiation rounds, masked calls with consent, briefs, revisions</td><td class="muted">A call runs through the platform number with a stored recording and an approved summary.</td></tr><tr><td class="mono strong">M6</td><td>Logistics providers, transport RFQ, languages, admin console live, export documents</td><td class="muted">A Tamil-speaking supplier quotes in Tamil; an export pack is assembled for one order.</td></tr><tr><td class="mono strong">M7</td><td>GRN, three-way match, audit pack</td><td class="muted">A real GRN and invoice match automatically, a mismatch is held, and the audit bundle verifies.</td></tr></tbody></table></div>
+    <div class="cols">
+      <div class="card"><span class="label">Backend on AWS</span><ul>
+        <li>TypeScript API and workers on ECS Fargate</li>
+        <li>PostgreSQL with pgvector, single-AZ to start</li>
+        <li>S3 with Object Lock for the 72-month audit record</li>
+        <li>EventBridge Scheduler + SQS for reminders and sealed-period ends</li>
+        <li>Cognito sign-in; CloudWatch alarms incl. cost per RFQ above ₹ 150</li>
+      </ul></div>
+      <div class="card"><span class="label">AI pipeline</span><ul>
+        <li>Drawing extraction with confidence and source spans, 0.75 threshold, fallback model, human confirm</li>
+        <li>Sarvam for voice quotes in Indian languages</li>
+        <li>Matching, drafting, metering per call</li>
+        <li>Gate: 95% field accuracy on 50 real drawings at under ₹ 20 each</li>
+      </ul></div>
+      <div class="card"><span class="label">Open decisions</span><ul>
+        <li>Advocate review date (gates production code)</li>
+        <li>Final brand name and domain</li>
+        <li>WhatsApp direct or BSP; call provider and consent wording</li>
+        <li>Model access: Anthropic API or Amazon Bedrock</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <span>Status as of 22-10-2026. Source, setup and the full reports are in the repository (<span class="mono">docs/FRONTEND-PROGRESS-REPORT.md</span>, <span class="mono">docs/REMAINING-WORK.md</span>).</span>
+    <span>All companies, people and figures in the screenshots are fictional.</span>
+  </footer>
+</div>
+</body></html>
