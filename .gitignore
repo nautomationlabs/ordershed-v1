@@ -9,3 +9,6 @@ coverage/
 *.log
 *.pem
 secrets/
+
+# Local uploads (S3 in AWS)
+var/

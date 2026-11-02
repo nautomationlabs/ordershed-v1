@@ -87,7 +87,7 @@ describe('sealed bids and floor price', () => {
 
 describe('admins read, never write order documents', () => {
   it('platform can read across orgs', async () => {
-    expect((await asOrg({ kind: 'platform', orgId: ops.id }, `select id from rfqs`)).rows.length).toBe(2);
+    expect((await asOrg({ kind: 'platform', orgId: ops.id }, `select id from rfqs where id = any($1)`, [[rfqA, rfqB]])).rows.length).toBe(2);
   });
   it('platform cannot create or edit an RFQ', async () => {
     await expect(asOrg({ kind: 'platform', orgId: ops.id }, `insert into rfqs (number, buyer_org_id, title) values ('RFQ-Y', $1, 'x')`, [buyerA.id]))

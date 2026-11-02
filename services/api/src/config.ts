@@ -44,6 +44,22 @@ const schema = z.object({
   /** Cost of one GSTIN check, from the provider's rate card. Sandbox calls are free. */
   GST_LOOKUP_COST_INR: z.coerce.number().default(0),
 
+  /** Drawing extraction: stand-in for development and tests, or Claude on Amazon Bedrock. */
+  EXTRACTOR: z.enum(['stub', 'bedrock']).default('stub'),
+  AWS_REGION: z.string().default('ap-southeast-2'),
+  EXTRACT_MODEL: z.string().default('anthropic.claude-sonnet-4-6'),
+  /** Re-reads fields still below 0.75 confidence; empty = no fallback. */
+  EXTRACT_FALLBACK_MODEL: z.string().optional(),
+  /** Bedrock on-demand rates (USD per million tokens) and the conversion rate, from the AWS price list. */
+  EXTRACT_INPUT_USD_PER_MTOK: z.coerce.number().default(3),
+  EXTRACT_OUTPUT_USD_PER_MTOK: z.coerce.number().default(15),
+  FALLBACK_INPUT_USD_PER_MTOK: z.coerce.number().default(5),
+  FALLBACK_OUTPUT_USD_PER_MTOK: z.coerce.number().default(25),
+  USD_INR: z.coerce.number().default(88),
+  /** Where uploaded files go in development (S3 with the AWS deploy). */
+  UPLOAD_DIR: z.string().default('var/uploads'),
+  UPLOAD_MAX_MB: z.coerce.number().default(20),
+
   /** Alert when the metered cost of one RFQ passes this (PROJECT CONTEXT: ₹150). */
   RFQ_COST_ALERT_INR: z.coerce.number().default(150),
 });
@@ -68,3 +84,8 @@ export function loadConfig(overrides: Partial<Record<keyof Config, unknown>> = {
   }
   return cfg;
 }
+
+export const extractRates = (cfg: Config) => ({
+  rates: { inputUsdPerMTok: cfg.EXTRACT_INPUT_USD_PER_MTOK, outputUsdPerMTok: cfg.EXTRACT_OUTPUT_USD_PER_MTOK, usdInr: cfg.USD_INR },
+  fallbackRates: { inputUsdPerMTok: cfg.FALLBACK_INPUT_USD_PER_MTOK, outputUsdPerMTok: cfg.FALLBACK_OUTPUT_USD_PER_MTOK, usdInr: cfg.USD_INR },
+});

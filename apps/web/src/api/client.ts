@@ -8,6 +8,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { ENV } from '@/config/brand';
 import * as db from './mock/data';
+import type { ExtractedField } from './types';
 
 export class ApiError extends Error {
   constructor(message: string, public status: number, public requestId: string, public code = 'error') {
@@ -64,6 +65,24 @@ async function get<T>(key: string, path: string, mock: () => T): Promise<T> {
 
 export const post = <T>(path: string, body: unknown = {}) => request<T>('POST', path, body);
 
+/** Uploads a file as the raw request body (drawings: PDF, PNG, JPEG, WebP). */
+async function upload<T>(path: string, file: File): Promise<T> {
+  let res: Response;
+  try {
+    res = await fetch(`${ENV.apiBase}${path}`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json', 'Content-Type': file.type || 'application/octet-stream', 'X-File-Name': encodeURIComponent(file.name) },
+      body: file,
+    });
+  } catch {
+    throw new ApiError('Could not reach the server. Check your connection and try again.', 0, 'network');
+  }
+  const json = (await res.json().catch(() => null)) as { error?: { code: string; message: string }; requestId?: string } | null;
+  if (!res.ok) throw new ApiError(json?.error?.message ?? res.statusText, res.status, json?.requestId ?? 'unknown', json?.error?.code);
+  return json as T;
+}
+
 export const api = {
   rfqs: () => get('rfqs', '/rfqs', () => db.rfqs),
   rfq: (id: string) => get('rfqs', `/rfqs/${id}`, () => db.rfqById(id) ?? null),
@@ -99,6 +118,14 @@ export interface GstRecord {
   gstin: string; legalName: string | null; tradeName: string | null; status: string | null; registeredOn: string | null;
   constitution: string | null; address: string | null; state: string | null; provider: string; alreadyRegistered: boolean;
 }
+export interface DraftField extends ExtractedField { confirmed: boolean; source: 'model' | 'fallback' | 'buyer' }
+export interface Draft {
+  rfq: { number: string; title: string; status: string };
+  document: { number: string; fileName: string; mediaType: string; byteSize: number };
+  extraction: { status: 'ready' | 'failed'; model: string; fallbackModel: string | null; costInr: string; durationMs: number | null; error: string | null; fields: DraftField[] };
+}
+export const drawingUrl = (rfq: string) => `${ENV.apiBase}/rfqs/${rfq}/drawing`;
+
 export interface Me { user: { name: string }; org: { number: string; name: string; kind: 'buyer' | 'supplier' | 'platform' }; role: string }
 
 export const actions = {
@@ -111,6 +138,10 @@ export const actions = {
   signInVerify: (challengeId: string, code: string) => post<Me>('/auth/verify', { challengeId, code }),
   signOut: () => post<{ ok: true }>('/auth/logout'),
   me: () => request<Me>('GET', '/auth/me'),
+  uploadDrawing: (file: File) => upload<Draft>('/rfqs/drafts', file),
+  draft: (rfq: string) => request<Draft>('GET', `/rfqs/${rfq}/extraction`),
+  confirmField: (rfq: string, key: string, edit?: { value: string; unit?: string | null }) =>
+    post<Draft>(`/rfqs/${rfq}/extraction/fields/${key}/confirm`, edit ?? {}),
   reviewVerification: (number: string, decision: 'approve' | 'reject', note?: string) =>
     post<{ status: string; needsSecondReviewer?: boolean }>(`/admin/verification/${number}/review`, { decision, note }),
 };

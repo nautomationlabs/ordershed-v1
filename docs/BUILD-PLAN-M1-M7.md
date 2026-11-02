@@ -27,8 +27,8 @@ Each milestone ends when its "Done when" case passes with real data.
 Done when: a real Hosur supplier joins with their GSTIN on WhatsApp, appears in the verification queue, and both events sit in a verified audit chain.
 
 ## M2: Catalogue and RFQ intake
-- [ ] Drawing and data-sheet upload (presigned S3)
-- [ ] Extraction: value, unit, confidence and source span per field; 0.75 threshold; fallback model; human confirm
+- [x] Drawing and data-sheet upload (local storage now; presigned S3 with the AWS deploy)
+- [x] Extraction: value, unit, confidence and source span per field; 0.75 threshold; fallback model; human confirm (built on Bedrock Sonnet 4.6 + Opus 4.6 fallback; first real run waits on the Bedrock quota)
 - [ ] Supplier catalogue extraction (PDF, photo, Excel) into proposed product rows
 - [ ] Buyer sign-up and KYB; Create request on real data
 - [ ] Trial rules (ends at first PO or 60 days); plans as settings

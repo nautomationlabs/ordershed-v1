@@ -28,6 +28,11 @@ const LABELS: Record<string, string> = {
   'verification.rejected': 'Verification rejected',
   'auth.signed_in': 'Signed in',
   'whatsapp.opted_out': 'WhatsApp opt-out',
+  'rfq.draft_created': 'RFQ draft created',
+  'document.extracted': 'Drawing read by AI',
+  'document.extraction_failed': 'Drawing could not be read',
+  'extraction.field_confirmed': 'Field confirmed',
+  'extraction.field_corrected': 'Field corrected',
 };
 
 const ROLES: Record<string, string> = {

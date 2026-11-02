@@ -11,11 +11,14 @@ import type { Config } from './config.js';
 import type { Db } from './db/pool.js';
 import { HttpError, forbidden } from './http/errors.js';
 import type { Email } from './integrations/email.js';
+import type { Extractor } from './integrations/extractor.js';
 import type { GstLookup } from './integrations/gst.js';
+import type { Storage } from './integrations/storage.js';
 import type { WhatsApp } from './integrations/whatsapp.js';
 import { authRoutes } from './routes/auth.js';
 import { governanceRoutes } from './routes/governance.js';
 import { joinRoutes } from './routes/join.js';
+import { rfqRoutes } from './routes/rfqs.js';
 import { whatsappRoutes } from './routes/whatsapp.js';
 import { findSession, SESSION_COOKIE } from './services/sessions.js';
 
@@ -25,6 +28,8 @@ export interface AppDeps {
   gst: GstLookup;
   whatsapp: WhatsApp;
   email: Email;
+  storage: Storage;
+  extractor: Extractor;
 }
 
 export async function buildApp(deps: AppDeps, opts: Pick<FastifyServerOptions, 'logger'> = {}) {
@@ -68,12 +73,13 @@ export async function buildApp(deps: AppDeps, opts: Pick<FastifyServerOptions, '
 
   app.get('/v1/health', async () => {
     await deps.db.query('select 1');
-    return { ok: true, whatsapp: deps.config.WHATSAPP_MODE, gst: deps.gst.name };
+    return { ok: true, whatsapp: deps.config.WHATSAPP_MODE, gst: deps.gst.name, extractor: deps.extractor.name };
   });
 
   await authRoutes(app, deps);
   await joinRoutes(app, deps);
   await governanceRoutes(app, deps);
   await whatsappRoutes(app, deps);
+  await rfqRoutes(app, deps);
   return app;
 }

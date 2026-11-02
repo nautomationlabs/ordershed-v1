@@ -1,16 +1,21 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useApiArg, api } from '@/api/client';
+import { useApiArg, api, isLive } from '@/api/client';
 import type { ExtractedField } from '@/api/types';
 import { Icon } from '@/components/Icon';
 import { Banner, Conf, PageHeader, Panel, SourceTag, TechLabel } from '@/components/primitives';
 import { LoadingBlock, ErrorState } from '@/components/StateViews';
 import { BRAND } from '@/config/brand';
+import { CreateRequestLive } from './CreateRequestLive';
 import { DrawingSvg, SPANS } from './DrawingSvg';
 
 const STEPS = ['Upload', 'Review fields', 'Quantity & terms', 'Find vendors'];
 
 export function CreateRequest() {
+  return isLive('extraction') ? <CreateRequestLive /> : <CreateRequestSandbox />;
+}
+
+function CreateRequestSandbox() {
   const nav = useNavigate();
   const { data, isLoading, error, refetch } = useApiArg('extraction', 'RFQ-000132', api.extraction);
   const [confirmed, setConfirmed] = useState<Record<string, boolean>>({});

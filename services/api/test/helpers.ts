@@ -4,7 +4,9 @@ import { buildApp } from '../src/app.js';
 import { loadConfig } from '../src/config.js';
 import { createPool } from '../src/db/pool.js';
 import { ConsoleEmail } from '../src/integrations/email.js';
+import { StubExtractor, type Extractor } from '../src/integrations/extractor.js';
 import { StubGst } from '../src/integrations/gst.js';
+import { MemoryStorage } from '../src/integrations/storage.js';
 import { ConsoleWhatsApp } from '../src/integrations/whatsapp.js';
 
 const HOST = process.env.TEST_DB_HOST ?? 'localhost:5433';
@@ -16,15 +18,16 @@ export const TEST_APP_URL = `postgres://ordershed_app:app_dev_only@${HOST}/${TES
 /** Owner connection: bypasses row-level security. Only for arranging test data and simulating tampering. */
 export const ownerPool = () => new pg.Pool({ connectionString: TEST_OWNER_URL, max: 2 });
 
-export async function testApp(overrides: Record<string, unknown> = {}) {
+export async function testApp(overrides: Record<string, unknown> = {}, extractor: Extractor = new StubExtractor()) {
   const config = loadConfig({
     NODE_ENV: 'test', DATABASE_URL: TEST_APP_URL, WHATSAPP_APP_SECRET: 'test-app-secret', WHATSAPP_VERIFY_TOKEN: 'test-verify', AUTH_RATE_LIMIT_PER_MIN: 1000, ...overrides,
   });
   const db = createPool(TEST_APP_URL, 5);
   const whatsapp = new ConsoleWhatsApp();
   const email = new ConsoleEmail();
-  const app = await buildApp({ config, db, gst: new StubGst(), whatsapp, email });
-  return { app, db, whatsapp, email, config };
+  const storage = new MemoryStorage();
+  const app = await buildApp({ config, db, gst: new StubGst(), whatsapp, email, storage, extractor });
+  return { app, db, whatsapp, email, config, storage };
 }
 
 /** Creates an org (and optionally a user with a role) directly, as the owner. */
